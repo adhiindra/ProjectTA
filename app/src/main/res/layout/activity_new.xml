@@ -34,7 +34,8 @@
                 android:id="@+id/scroll"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="80dp">
+                android:layout_marginTop="80dp"
+                android:paddingBottom="200dp">
 
                 <ImageView
                     android:id="@+id/bt_enggine"
@@ -160,6 +161,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="30dp"
+                    android:layout_marginBottom="200dp"
                     app:layout_constraintStart_toStartOf="@+id/bt_timer"
                     app:layout_constraintTop_toBottomOf="@+id/bt_timer"
                     app:srcCompat="@drawable/finger_print1" />
@@ -202,11 +204,9 @@
                     android:id="@+id/textView12"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="200dp"
                     android:fontFamily="@font/poppins_light"
                     android:text="Fingerprint"
                     android:textSize="10sp"
-                    app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="@+id/bt_finger"
                     app:layout_constraintStart_toStartOf="@+id/bt_finger"
                     app:layout_constraintTop_toBottomOf="@+id/bt_finger" />

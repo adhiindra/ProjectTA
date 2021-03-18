@@ -17,7 +17,9 @@ import android.os.SystemClock;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.telephony.TelephonyManager;
+import android.text.Html;
 import android.text.format.DateFormat;
+import android.text.method.LinkMovementMethod;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -31,6 +33,8 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.google.android.material.button.MaterialButton;
@@ -159,6 +163,10 @@ public class MainActivity extends AppCompatActivity {
                             cekFingerButton();
 
                         } else {
+                            mReadBuffer.setText("Perangkat ini Tidak Cocok!");
+                            connect.setText("Disconnect");
+                            connect.setEnabled(true);
+                            isNotConnected = false;
                             Toast.makeText(MainActivity.this, "Perangkat ini Tidak Cocok!", Toast.LENGTH_LONG).show();
                         }
                     }
@@ -375,6 +383,35 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    private void cekLocation(){
+        int REQUEST_ACCESS_COARSE_LOCATION = 1;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {  // Only ask for these permissions on runtime when running Android 6.0 or higher
+            switch (ContextCompat.checkSelfPermission(getBaseContext(), Manifest.permission.ACCESS_FINE_LOCATION)) {
+                case PackageManager.PERMISSION_DENIED:
+                    ((TextView) new AlertDialog.Builder(ctx)
+                            .setTitle("Runtime Permissions up ahead")
+                            .setMessage(Html.fromHtml("<p>To find nearby bluetooth devices please click \"Allow\" on the runtime permissions popup.</p>" +
+                                    "<p>For more info see <a href=\"http://developer.android.com/about/versions/marshmallow/android-6.0-changes.html#behavior-hardware-id\">here</a>.</p>"))
+                            .setNeutralButton("Okay", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    if (ContextCompat.checkSelfPermission(getBaseContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                                        ActivityCompat.requestPermissions(MainActivity.this,
+                                                new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                                                REQUEST_ACCESS_COARSE_LOCATION);
+                                    }
+                                }
+                            })
+                            .show()
+                            .findViewById(android.R.id.message))
+                            .setMovementMethod(LinkMovementMethod.getInstance());       // Make the link clickable. Needs to be called after show(), in order to generate hyperlinks
+                    break;
+                case PackageManager.PERMISSION_GRANTED:
+                    break;
+            }
+        }
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -403,6 +440,7 @@ public class MainActivity extends AppCompatActivity {
         swipeRefreshLayout.setEnabled(false);
         ctx = this;
 
+        cekLocation();
         setInVisible();
         refreshListener();
 
@@ -825,8 +863,6 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-
-
     private void showTimeDialog() {
 
         /**
@@ -863,7 +899,7 @@ public class MainActivity extends AppCompatActivity {
         timePickerDialog.show();
     }
 
-    private void bluetoothOn(View view){
+    private void bluetoothOn(){
         if (!mBTAdapter.isEnabled()) {
             Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
@@ -924,6 +960,7 @@ public class MainActivity extends AppCompatActivity {
             registerReceiver(blReceiver, new IntentFilter(BluetoothDevice.ACTION_FOUND));
         }
         else{
+            bluetoothOn();
             Toast.makeText(getApplicationContext(), "Bluetooth not on", Toast.LENGTH_SHORT).show();
         }
     }
