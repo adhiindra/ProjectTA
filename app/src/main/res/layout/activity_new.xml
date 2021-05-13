@@ -211,6 +211,35 @@
                     app:layout_constraintStart_toStartOf="@+id/bt_finger"
                     app:layout_constraintTop_toBottomOf="@+id/bt_finger" />
 
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/button_imei"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="20dp"
+                    android:layout_marginTop="30dp"
+                    android:backgroundTint="#F2F2F2"
+                    android:elevation="8dp"
+                    android:fontFamily="@font/poppins_semibold"
+                    android:text="Tambah Devices"
+                    android:textColor="@color/textColorButton"
+                    android:textSize="12sp"
+                    app:layout_constraintStart_toStartOf="@+id/bt_finger"
+                    app:layout_constraintTop_toBottomOf="@+id/textView12" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/button_cekimei"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:backgroundTint="#F2F2F2"
+                    android:layout_marginStart="5dp"
+                    android:elevation="8dp"
+                    android:fontFamily="@font/poppins_semibold"
+                    android:text="Cek Imei"
+                    android:textColor="@color/textColorButton"
+                    android:textSize="12sp"
+                    app:layout_constraintStart_toEndOf="@+id/button_imei"
+                    app:layout_constraintTop_toTopOf="@+id/button_imei" />
+
 
             </androidx.constraintlayout.widget.ConstraintLayout>
 

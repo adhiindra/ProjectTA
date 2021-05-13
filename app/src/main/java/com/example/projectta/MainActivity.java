@@ -25,6 +25,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -70,6 +71,8 @@ public class MainActivity extends AppCompatActivity {
     private BluetoothAdapter mBTAdapter;
     private ArrayAdapter<String> mBTArrayAdapter;
     private ListView mDevicesListView;
+    private TextView mDevicesTvImei;
+    private EditText mDevicesTeImei;
     private ImageView ignition;
     private ImageView guest;
     private ImageView timer;
@@ -85,6 +88,8 @@ public class MainActivity extends AppCompatActivity {
     private MaterialButton finger2;
     private MaterialButton finger3;
     private MaterialButton finger4;
+    private MaterialButton addDevices;
+    private MaterialButton cekImei;
     private Context ctx;
     private ArrayList<Integer> fingerprintButtons = new ArrayList<>();
 
@@ -126,6 +131,13 @@ public class MainActivity extends AppCompatActivity {
         databaseakun.child("finger4").setValue(0);
     }
 
+    private void createAkun2(String imei2){
+        if(imei2!=null){
+            DatabaseReference databaseakun = database.getInstance().getReference("Devices/"+key);
+            databaseakun.child("Imei2").setValue(imei2);
+        }
+    }
+
     private void checkDevices(String Text){
         DatabaseReference databaseakun = database.getInstance().getReference("Devices/");
         Query query = databaseakun.orderByChild("btAddress").equalTo(btAddress);
@@ -140,13 +152,14 @@ public class MainActivity extends AppCompatActivity {
                         DataSnapshot devices = dataSnapshot.child(user.getKey());
                         String dbImei = devices.child("Imei").getValue(String.class);
                         String dBtAddress = devices.child("btAddress").getValue(String.class);
+                        String dbImei2 = devices.child("Imei2").getValue(String.class);
                         Integer finger1 = devices.child("finger1").getValue(Integer.class);
                         Integer finger2 = devices.child("finger2").getValue(Integer.class);
                         Integer finger3 = devices.child("finger3").getValue(Integer.class);
                         Integer finger4 = devices.child("finger4").getValue(Integer.class);
 
 
-                        if (dbImei.equals(imei)) {
+                        if (dbImei.equals(imei) || dbImei2.equals(imei)) {
                             key = devices.getKey();
 //                            Toast.makeText(MainActivity.this,key , Toast.LENGTH_LONG).show();
                             isNotConnected = false;
@@ -356,6 +369,7 @@ public class MainActivity extends AppCompatActivity {
         finger2.setEnabled(true);
         finger3.setEnabled(true);
         finger4.setEnabled(true);
+        addDevices.setEnabled(true);
         swipeRefreshLayout.setEnabled(true);
 
     }
@@ -372,8 +386,10 @@ public class MainActivity extends AppCompatActivity {
         finger2.setEnabled(false);
         finger3.setEnabled(false);
         finger4.setEnabled(false);
+        addDevices.setEnabled(false);
 
     }
+
     private void refreshListener(){
         swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
@@ -436,6 +452,8 @@ public class MainActivity extends AppCompatActivity {
         finger2 = findViewById(R.id.bt_finger2);
         finger3 = findViewById(R.id.bt_finger3);
         finger4 = findViewById(R.id.bt_finger4);
+        addDevices = findViewById(R.id.button_imei);
+        cekImei = findViewById(R.id.button_cekimei);
         swipeRefreshLayout = findViewById(R.id.pullToRefresh);
         swipeRefreshLayout.setEnabled(false);
         ctx = this;
@@ -494,6 +512,20 @@ public class MainActivity extends AppCompatActivity {
                     cekFingerButton();
                 }
 
+            }
+        });
+
+        cekImei.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                dialogFormCekImei();
+            }
+        });
+
+        addDevices.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                dialogFormImei();
             }
         });
 
@@ -910,6 +942,52 @@ public class MainActivity extends AppCompatActivity {
         else{
             Toast.makeText(getApplicationContext(),"Bluetooth is already on", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    private void dialogFormCekImei(){
+        dialog = new AlertDialog.Builder(MainActivity.this);
+        inflater = getLayoutInflater();
+        dialogView = inflater.inflate(R.layout.cekimei_form,null);
+        dialog.setView(dialogView);
+        dialog.setCancelable(true);
+        dialog.setTitle("Cek Imei Perangkat");
+        mDevicesTvImei = (TextView) dialogView.findViewById(R.id.tv_imei);
+        mDevicesTvImei.setText(imei);
+
+        dialog.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                dialogInterface.dismiss();
+            }
+        });
+
+        dialog.show();
+    }
+
+    private void dialogFormImei(){
+        dialog = new AlertDialog.Builder(MainActivity.this);
+        inflater = getLayoutInflater();
+        dialogView = inflater.inflate(R.layout.imei_form,null);
+        dialog.setView(dialogView);
+        dialog.setCancelable(true);
+        dialog.setTitle("Tambah Perangkat");
+        mDevicesTeImei = (EditText) dialogView.findViewById(R.id.te_imei);
+        dialog.setPositiveButton("Add Devices", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                createAkun2(mDevicesTeImei.getText().toString());
+            }
+        });
+
+        dialog.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                dialogInterface.dismiss();
+            }
+        });
+
+        dialog.show();
+
     }
 
     private void dialogFormBt(){
