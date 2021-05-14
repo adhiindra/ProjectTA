@@ -58,6 +58,8 @@ public class MainActivity extends AppCompatActivity {
     String imei = "";
     String btAddress = "";
     String key = "";
+    String dbImei;
+    String dbImei2;
 
     AlertDialog.Builder dialog;
     LayoutInflater inflater;
@@ -138,6 +140,16 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void deleteAkun(){
+        if(imei.equals(dbImei)){
+            DatabaseReference myRef = database.getReference("Devices/"+key);
+            myRef.removeValue();
+        }else {
+            DatabaseReference myRef = database.getReference("Devices/"+key);
+            myRef.child("Imei2").removeValue();
+        }
+    }
+
     private void checkDevices(String Text){
         DatabaseReference databaseakun = database.getInstance().getReference("Devices/");
         Query query = databaseakun.orderByChild("btAddress").equalTo(btAddress);
@@ -150,9 +162,9 @@ public class MainActivity extends AppCompatActivity {
                     for (DataSnapshot user : dataSnapshot.getChildren()) {
                         // do something with the individual "issues"
                         DataSnapshot devices = dataSnapshot.child(user.getKey());
-                        String dbImei = devices.child("Imei").getValue(String.class);
+                        dbImei = devices.child("Imei").getValue(String.class);
                         String dBtAddress = devices.child("btAddress").getValue(String.class);
-                        String dbImei2 = devices.child("Imei2").getValue(String.class);
+                        dbImei2 = devices.child("Imei2").getValue(String.class);
                         Integer finger1 = devices.child("finger1").getValue(Integer.class);
                         Integer finger2 = devices.child("finger2").getValue(Integer.class);
                         Integer finger3 = devices.child("finger3").getValue(Integer.class);
@@ -356,6 +368,14 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void cekDevices(){
+        if(imei.equals(dbImei)){
+            addDevices.setEnabled(true);
+        }else{
+            addDevices.setEnabled(false);
+        }
+    }
+
     private void setVisible(){
 
         ignition.setEnabled(true);
@@ -371,6 +391,7 @@ public class MainActivity extends AppCompatActivity {
         finger4.setEnabled(true);
         addDevices.setEnabled(true);
         swipeRefreshLayout.setEnabled(true);
+        cekDevices();
 
     }
 
@@ -811,14 +832,14 @@ public class MainActivity extends AppCompatActivity {
                                 swipeRefreshLayout.setEnabled(false);
                                 fingerprintButtons.clear();
                                 cekFingerButton();
-                                DatabaseReference myRef = database.getReference("Devices/"+key);
-                                myRef.removeValue();
+                                deleteAkun();
                                 checkDevices("-");
                                 volt.setText("-");
                                 waktu.setText("-");
                                 mReadBuffer.setText("Akun Dihapus");
                                 connect.setText("CONNECT");
                                 setInVisible();
+                                mConnectedThread.cancel();
                                 isNotConnected = true;
                                 mHandler.obtainMessage(CONNECTING_STATUS, 2, -1)
                                         .sendToTarget();
