@@ -215,7 +215,7 @@
                     android:id="@+id/button_imei"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="20dp"
+                    android:layout_marginStart="15dp"
                     android:layout_marginTop="30dp"
                     android:backgroundTint="#F2F2F2"
                     android:elevation="8dp"

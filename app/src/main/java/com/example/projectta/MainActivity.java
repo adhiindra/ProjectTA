@@ -11,6 +11,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.os.Build;
 import android.os.Handler;
 import android.os.SystemClock;
@@ -25,7 +26,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -45,6 +45,10 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.MultiFormatWriter;
+import com.google.zxing.WriterException;
+import com.google.zxing.common.BitMatrix;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -73,8 +77,7 @@ public class MainActivity extends AppCompatActivity {
     private BluetoothAdapter mBTAdapter;
     private ArrayAdapter<String> mBTArrayAdapter;
     private ListView mDevicesListView;
-    private TextView mDevicesTvImei;
-    private EditText mDevicesTeImei;
+    private ImageView mDevicesIvImei;
     private ImageView ignition;
     private ImageView guest;
     private ImageView timer;
@@ -82,6 +85,7 @@ public class MainActivity extends AppCompatActivity {
     private ImageView dUser;
     private ImageView cekTegangan;
     private MaterialButton timerJam;
+    private TextView tvImei;
     private TextView waktu;
     private TextView volt;
     private ImageView imgAki;
@@ -106,7 +110,6 @@ public class MainActivity extends AppCompatActivity {
     private boolean finger3IsNull = true;
     private boolean finger4IsNull = true;
     private boolean fingerIsDeleted = false;
-    private boolean fingerCanceled = false;
 
     private Handler mHandler; // Our main handler that will receive callback notifications
     private ConnectedThread mConnectedThread; // bluetooth background worker thread to send and receive data
@@ -114,6 +117,7 @@ public class MainActivity extends AppCompatActivity {
     FirebaseDatabase database = FirebaseDatabase.getInstance();
     Handler handler = new Handler();
 
+    private static final int REQUEST_CAMERA_RESULT = 1;
     private static final UUID BTMODULEUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"); // "random" unique identifier
 
 
@@ -131,13 +135,6 @@ public class MainActivity extends AppCompatActivity {
         databaseakun.child("finger2").setValue(0);
         databaseakun.child("finger3").setValue(0);
         databaseakun.child("finger4").setValue(0);
-    }
-
-    private void createAkun2(String imei2){
-        if(imei2!=null){
-            DatabaseReference databaseakun = database.getInstance().getReference("Devices/"+key);
-            databaseakun.child("Imei2").setValue(imei2);
-        }
     }
 
     private void deleteAkun(){
@@ -204,7 +201,6 @@ public class MainActivity extends AppCompatActivity {
                         connect.setEnabled(false);
                         createAkun();
                         checkDevices("Berhasil Membuat Akun");
-//                        Toast.makeText(MainActivity.this, "Daftar Terlebih Dahulu!", Toast.LENGTH_LONG).show();
                     }
 
                 }
@@ -407,7 +403,7 @@ public class MainActivity extends AppCompatActivity {
         finger2.setEnabled(false);
         finger3.setEnabled(false);
         finger4.setEnabled(false);
-        addDevices.setEnabled(false);
+//        addDevices.setEnabled(false);
 
     }
 
@@ -422,6 +418,10 @@ public class MainActivity extends AppCompatActivity {
 
     private void cekLocation(){
         int REQUEST_ACCESS_COARSE_LOCATION = 1;
+        if (ContextCompat.checkSelfPermission(ctx, Manifest.permission.CAMERA)
+                == PackageManager.PERMISSION_DENIED){
+            ActivityCompat.requestPermissions(MainActivity.this, new String[] {Manifest.permission.CAMERA}, REQUEST_CAMERA_RESULT);
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {  // Only ask for these permissions on runtime when running Android 6.0 or higher
             switch (ContextCompat.checkSelfPermission(getBaseContext(), Manifest.permission.ACCESS_FINE_LOCATION)) {
                 case PackageManager.PERMISSION_DENIED:
@@ -546,7 +546,10 @@ public class MainActivity extends AppCompatActivity {
         addDevices.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                dialogFormImei();
+
+                Intent intent = new Intent(MainActivity.this, qrCodeActivity.class);
+                intent.putExtra("key", key);
+                startActivity(intent);
             }
         });
 
@@ -904,6 +907,12 @@ public class MainActivity extends AppCompatActivity {
                     if (isGuestOff){
                         mConnectedThread.write("5");
                         timer.setEnabled(false);
+                        if(!isTimerOff && !isIgnitionOff){
+                            timer.setImageResource(R.drawable.clockoff);
+                            isTimerOff = true;
+                            ignition.setImageResource(R.drawable.engineoff);
+                            isIgnitionOff = true;
+                        }
                     }
                     else {
                         mConnectedThread.write("4");
@@ -965,6 +974,40 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private Bitmap TextToImageEncode(String Value) throws WriterException {
+        BitMatrix bitMatrix;
+        try {
+            bitMatrix = new MultiFormatWriter().encode(
+                    Value,
+                    BarcodeFormat.DATA_MATRIX.QR_CODE,
+                    500, 500, null
+            );
+
+        } catch (IllegalArgumentException Illegalargumentexception) {
+
+            return null;
+        }
+        int bitMatrixWidth = bitMatrix.getWidth();
+
+        int bitMatrixHeight = bitMatrix.getHeight();
+
+        int[] pixels = new int[bitMatrixWidth * bitMatrixHeight];
+
+        for (int y = 0; y < bitMatrixHeight; y++) {
+            int offset = y * bitMatrixWidth;
+
+            for (int x = 0; x < bitMatrixWidth; x++) {
+
+                pixels[offset + x] = bitMatrix.get(x, y) ?
+                        getResources().getColor(R.color.black):getResources().getColor(R.color.white);
+            }
+        }
+        Bitmap bitmap = Bitmap.createBitmap(bitMatrixWidth, bitMatrixHeight, Bitmap.Config.ARGB_4444);
+
+        bitmap.setPixels(pixels, 0, 500, 0, 0, bitMatrixWidth, bitMatrixHeight);
+        return bitmap;
+    }
+
     private void dialogFormCekImei(){
         dialog = new AlertDialog.Builder(MainActivity.this);
         inflater = getLayoutInflater();
@@ -972,8 +1015,14 @@ public class MainActivity extends AppCompatActivity {
         dialog.setView(dialogView);
         dialog.setCancelable(true);
         dialog.setTitle("Cek Imei Perangkat");
-        mDevicesTvImei = (TextView) dialogView.findViewById(R.id.tv_imei);
-        mDevicesTvImei.setText(imei);
+        mDevicesIvImei = (ImageView) dialogView.findViewById(R.id.qrimage);
+        tvImei = (TextView)dialogView.findViewById(R.id.tv_imei);
+        tvImei.setText("Imei : " + imei);
+        try {
+            mDevicesIvImei.setImageBitmap(TextToImageEncode(imei));
+        } catch (WriterException e) {
+            e.printStackTrace();
+        }
 
         dialog.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
             @Override
@@ -983,32 +1032,6 @@ public class MainActivity extends AppCompatActivity {
         });
 
         dialog.show();
-    }
-
-    private void dialogFormImei(){
-        dialog = new AlertDialog.Builder(MainActivity.this);
-        inflater = getLayoutInflater();
-        dialogView = inflater.inflate(R.layout.imei_form,null);
-        dialog.setView(dialogView);
-        dialog.setCancelable(true);
-        dialog.setTitle("Tambah Perangkat");
-        mDevicesTeImei = (EditText) dialogView.findViewById(R.id.te_imei);
-        dialog.setPositiveButton("Add Devices", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialogInterface, int i) {
-                createAkun2(mDevicesTeImei.getText().toString());
-            }
-        });
-
-        dialog.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialogInterface, int i) {
-                dialogInterface.dismiss();
-            }
-        });
-
-        dialog.show();
-
     }
 
     private void dialogFormBt(){

@@ -2,29 +2,34 @@
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:background="@color/white">
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Imei: "
-            android:textSize="20dp"
-            android:layout_marginStart="20dp"/>
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
 
         <TextView
             android:id="@+id/tv_imei"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="1263126381 "
+            android:text="Imei :"
+            android:layout_marginTop="10dp"
+            android:layout_gravity="center"
             android:textSize="20dp"/>
 
-
+        <ImageView
+            android:id="@+id/qrimage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginTop="20dp"
+            android:layout_gravity="center"
+            tools:srcCompat="@tools:sample/avatars" />
     </LinearLayout>
 
 </LinearLayout>
