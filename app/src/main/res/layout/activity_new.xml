@@ -240,6 +240,20 @@
                     app:layout_constraintStart_toEndOf="@+id/button_imei"
                     app:layout_constraintTop_toTopOf="@+id/button_imei" />
 
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/button_override"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:backgroundTint="#F2F2F2"
+                    android:elevation="8dp"
+                    android:fontFamily="@font/poppins_semibold"
+                    android:text="Override"
+                    android:textColor="#FF0000"
+                    android:layout_marginStart="75dp"
+                    android:textSize="12sp"
+                    app:layout_constraintStart_toStartOf="@+id/button_imei"
+                    app:layout_constraintTop_toBottomOf="@+id/button_imei" />
+
 
             </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -308,6 +322,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:scaleType="fitXY"
+        android:elevation="1dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -335,6 +350,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="30dp"
         android:layout_marginTop="20dp"
+        android:elevation="1dp"
         android:fontFamily="@font/poppins_bold"
         android:text="STATUS AKI"
         app:layout_constraintStart_toStartOf="@+id/imageView6"
@@ -347,6 +363,7 @@
         android:fontFamily="@font/poppins_semibold"
         android:text="-"
         android:textSize="12sp"
+        android:elevation="1dp"
         app:layout_constraintStart_toStartOf="@+id/tv_stsAki"
         app:layout_constraintTop_toBottomOf="@+id/tv_stsAki" />
 
@@ -355,6 +372,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="3dp"
+        android:elevation="1dp"
         android:fontFamily="@font/poppins_semibold"
         android:text="Volt"
         android:textSize="12sp"
@@ -366,6 +384,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
+        android:elevation="1dp"
         android:layout_marginEnd="120dp"
         android:fontFamily="@font/poppins_bold"
         android:text="STATUS"
@@ -377,6 +396,7 @@
         android:id="@+id/tv_stsAki"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:elevation="1dp"
         android:layout_marginStart="20dp"
         android:fontFamily="@font/poppins_semibold"
         android:text="-"
@@ -388,6 +408,7 @@
         android:id="@+id/tv_sts"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:elevation="1dp"
         android:fontFamily="@font/poppins_semibold"
         android:text="-"
         android:textSize="12sp"
@@ -399,6 +420,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
+        android:elevation="1dp"
         app:layout_constraintStart_toStartOf="@+id/textView"
         app:layout_constraintTop_toBottomOf="@+id/textView"
         app:srcCompat="@drawable/carbatterypending" />

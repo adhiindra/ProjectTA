@@ -11,6 +11,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.os.Build;
 import android.os.Handler;
@@ -19,13 +20,16 @@ import android.os.Bundle;
 import android.provider.Settings;
 import android.telephony.TelephonyManager;
 import android.text.Html;
+import android.text.InputType;
 import android.text.format.DateFormat;
 import android.text.method.LinkMovementMethod;
+import android.text.method.PasswordTransformationMethod;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -53,8 +57,10 @@ import com.google.zxing.common.BitMatrix;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
@@ -64,6 +70,8 @@ public class MainActivity extends AppCompatActivity {
     String key = "";
     String dbImei;
     String dbImei2;
+    String devicesName;
+    Integer dbPin = 0;
 
     AlertDialog.Builder dialog;
     LayoutInflater inflater;
@@ -90,6 +98,9 @@ public class MainActivity extends AppCompatActivity {
     private TextView volt;
     private ImageView imgAki;
     private TextView stsAki;
+    private TextView tvPin;
+    private EditText pinOverride;
+    private MaterialButton override;
     private MaterialButton finger1;
     private MaterialButton finger2;
     private MaterialButton finger3;
@@ -127,14 +138,89 @@ public class MainActivity extends AppCompatActivity {
     private final static int CONNECTING_STATUS = 3; // used in bluetooth handler to identify message status
 
 
-    private void createAkun(){
+    private void dialogFormOveride(){
+        dialog = new AlertDialog.Builder(MainActivity.this);
+        inflater = getLayoutInflater();
+        dialogView = inflater.inflate(R.layout.pin_form,null);
+        dialog.setView(dialogView);
+        dialog.setCancelable(true);
+        dialog.setTitle("OVERRIDE");
+        tvPin = (TextView) dialogView.findViewById(R.id.tv_pin);
+        tvPin.setText("Masukan 6 Digit Pin Yang Sudah Di Daftarkan Pada Perangkat Sebelumnya");
+        pinOverride = (EditText) dialogView.findViewById(R.id.formPin);
+        pinOverride.setRawInputType(Configuration.KEYBOARD_12KEY);
+
+        dialog.setPositiveButton("Override", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                Integer setPin = 0;
+                if (pinOverride.getText().toString().matches("")){
+                    Toast.makeText(MainActivity.this, "Pin Kosong!", Toast.LENGTH_SHORT).show();
+                    return;
+                }else{
+                    setPin = Integer.parseInt(pinOverride.getText().toString());
+                    Log.i("Pin",setPin.toString()+dbPin);
+                    if(setPin.equals(dbPin)){
+                        DatabaseReference myRef = database.getReference("Devices/"+key);
+                        myRef.removeValue();
+                        checkDevices(devicesName);
+                        Toast.makeText(MainActivity.this,"Berhasil Override!",Toast.LENGTH_LONG).show();
+                    }else {
+                        Toast.makeText(MainActivity.this,"Pin Salah!!!",Toast.LENGTH_LONG).show();
+                    }
+                }
+            }
+        });
+
+        dialog.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                dialogInterface.dismiss();
+            }
+        });
+
+        dialog.show();
+    }
+
+    private void createPin(){
+        dialog = new AlertDialog.Builder(MainActivity.this);
+        inflater = getLayoutInflater();
+        dialogView = inflater.inflate(R.layout.pin_form,null);
+        dialog.setView(dialogView);
+        dialog.setCancelable(false);
+        dialog.setTitle("Pin Override");
+        tvPin = (TextView) dialogView.findViewById(R.id.tv_pin);
+        tvPin.setText("Masukan 6 Digit Pin Yang Digunakan Untuk Override");
+        pinOverride = (EditText) dialogView.findViewById(R.id.formPin);
+        pinOverride.setRawInputType(Configuration.KEYBOARD_12KEY);
+
+        dialog.setPositiveButton("Daftar", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                Integer pinNew = 0;
+                if (pinOverride.getText().toString().matches("")){
+                    Toast.makeText(MainActivity.this, "Pin Kosong!", Toast.LENGTH_SHORT).show();
+                    return;
+                }else{
+                    pinNew = Integer.parseInt(pinOverride.getText().toString());
+                    createAkun(pinNew);
+                }
+            }
+        });
+
+        dialog.show();
+    }
+
+    private void createAkun(Integer pin){
         DatabaseReference databaseakun = database.getInstance().getReference("Devices/").push();
         databaseakun.child("Imei").setValue(imei);
         databaseakun.child("btAddress").setValue(btAddress);
+        databaseakun.child("pin").setValue(pin);
         databaseakun.child("finger1").setValue(0);
         databaseakun.child("finger2").setValue(0);
         databaseakun.child("finger3").setValue(0);
         databaseakun.child("finger4").setValue(0);
+        checkDevices("Berhasil Membuat Akun");
     }
 
     private void deleteAkun(){
@@ -161,18 +247,21 @@ public class MainActivity extends AppCompatActivity {
                         DataSnapshot devices = dataSnapshot.child(user.getKey());
                         dbImei = devices.child("Imei").getValue(String.class);
                         String dBtAddress = devices.child("btAddress").getValue(String.class);
+                        dbPin = devices.child("pin").getValue(Integer.class);
                         dbImei2 = devices.child("Imei2").getValue(String.class);
+                        key = devices.getKey();
                         Integer finger1 = devices.child("finger1").getValue(Integer.class);
                         Integer finger2 = devices.child("finger2").getValue(Integer.class);
                         Integer finger3 = devices.child("finger3").getValue(Integer.class);
                         Integer finger4 = devices.child("finger4").getValue(Integer.class);
 
+                        if (imei.equals(dbImei) || imei.equals(dbImei2)) {
 
-                        if (dbImei.equals(imei) || dbImei2.equals(imei)) {
-                            key = devices.getKey();
 //                            Toast.makeText(MainActivity.this,key , Toast.LENGTH_LONG).show();
                             isNotConnected = false;
-                            mConnectedThread.write("10");
+                            SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
+                            String str = sdf.format(new Date());
+                            mConnectedThread.write("start"+str);
                             Log.i("BoolanCon",String.valueOf(isNotConnected));
                             Toast.makeText(MainActivity.this, Text, Toast.LENGTH_LONG).show();
                             connect.setText("DISCONNECT");
@@ -188,6 +277,7 @@ public class MainActivity extends AppCompatActivity {
                             mReadBuffer.setText("Perangkat ini Tidak Cocok!");
                             connect.setText("Disconnect");
                             connect.setEnabled(true);
+                            override.setVisibility(View.VISIBLE);
                             isNotConnected = false;
                             Toast.makeText(MainActivity.this, "Perangkat ini Tidak Cocok!", Toast.LENGTH_LONG).show();
                         }
@@ -199,8 +289,7 @@ public class MainActivity extends AppCompatActivity {
                     else {
                         connect.setText("CREATING...");
                         connect.setEnabled(false);
-                        createAkun();
-                        checkDevices("Berhasil Membuat Akun");
+                        createPin();
                     }
 
                 }
@@ -403,7 +492,7 @@ public class MainActivity extends AppCompatActivity {
         finger2.setEnabled(false);
         finger3.setEnabled(false);
         finger4.setEnabled(false);
-//        addDevices.setEnabled(false);
+        addDevices.setEnabled(false);
 
     }
 
@@ -469,6 +558,8 @@ public class MainActivity extends AppCompatActivity {
         volt = findViewById(R.id.tv_voltAki);
         imgAki = findViewById(R.id.img_aki);
         stsAki = findViewById(R.id.tv_stsAki);
+        override = findViewById(R.id.button_override);
+        override.setVisibility(View.GONE);
         finger1 = findViewById(R.id.bt_finger1);
         finger2 = findViewById(R.id.bt_finger2);
         finger3 = findViewById(R.id.bt_finger3);
@@ -510,12 +601,24 @@ public class MainActivity extends AppCompatActivity {
             }
         };
 
+        override.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                dialogFormOveride();
+            }
+        });
+
         connect.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 if(isNotConnected){
                     Log.i("BoolanCon",String.valueOf(isNotConnected));
-                    dialogFormBt();
+                    if (mBTAdapter == null){
+                        Toast.makeText(MainActivity.this, "Tidak Ada Koneksi Bluetooth Pada Perangkat!", Toast.LENGTH_SHORT).show();
+                    }else {
+                        dialogFormBt();
+                    }
+
                 }else {
                     setInVisible();
                     ignition.setImageResource(R.drawable.enginepending);
@@ -842,10 +945,19 @@ public class MainActivity extends AppCompatActivity {
                                 mReadBuffer.setText("Akun Dihapus");
                                 connect.setText("CONNECT");
                                 setInVisible();
-                                mConnectedThread.cancel();
-                                isNotConnected = true;
-                                mHandler.obtainMessage(CONNECTING_STATUS, 2, -1)
-                                        .sendToTarget();
+                                final Handler handler = new Handler();
+                                handler.postDelayed(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        // Do something after 5s = 5000ms
+                                        mConnectedThread.cancel();
+                                        isNotConnected = true;
+                                        mHandler.obtainMessage(CONNECTING_STATUS, 2, -1)
+                                                .sendToTarget();
+                                        handler.removeCallbacksAndMessages(null);
+                                    }
+                                }, 3000);
+
                             }
                         });
                 builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
@@ -1075,7 +1187,11 @@ public class MainActivity extends AppCompatActivity {
 
     private void discover(){
 
-        if(mBTAdapter.isEnabled()) {
+        if(mBTAdapter == null){
+            Toast.makeText(this, "Tidak Ada Koneksi Bluetooth", Toast.LENGTH_SHORT).show();
+            // Show proper message here
+        }
+        else if(mBTAdapter.isEnabled()) {
             mBTArrayAdapter.clear(); // clear items
             mBTAdapter.startDiscovery();
             Toast.makeText(getApplicationContext(), "Discovery started", Toast.LENGTH_SHORT).show();
@@ -1150,6 +1266,7 @@ public class MainActivity extends AppCompatActivity {
                         connect.setText("LOGIN...");
                         connect.setEnabled(false);
                         checkDevices(name);
+                        devicesName = name;
                         mHandler.obtainMessage(CONNECTING_STATUS, 1, -1, name)
                                 .sendToTarget();
                     }
