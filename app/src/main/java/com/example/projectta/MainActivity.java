@@ -20,18 +20,18 @@ import android.os.Bundle;
 import android.provider.Settings;
 import android.telephony.TelephonyManager;
 import android.text.Html;
-import android.text.InputType;
 import android.text.format.DateFormat;
 import android.text.method.LinkMovementMethod;
-import android.text.method.PasswordTransformationMethod;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
@@ -61,17 +61,21 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
 
+    private static final int REQUEST_READ_PHONE_STATE = 1 ;
     String imei = "";
     String btAddress = "";
     String key = "";
     String dbImei;
     String dbImei2;
     String devicesName;
+    String JenisKendaraan;
     Integer dbPin = 0;
+    Integer reset = 0;
 
     AlertDialog.Builder dialog;
     LayoutInflater inflater;
@@ -107,6 +111,7 @@ public class MainActivity extends AppCompatActivity {
     private MaterialButton finger4;
     private MaterialButton addDevices;
     private MaterialButton cekImei;
+    private Spinner dropdown;
     private Context ctx;
     private ArrayList<Integer> fingerprintButtons = new ArrayList<>();
 
@@ -137,6 +142,48 @@ public class MainActivity extends AppCompatActivity {
     private final static int MESSAGE_READ = 2; // used in bluetooth handler to identify message update
     private final static int CONNECTING_STATUS = 3; // used in bluetooth handler to identify message status
 
+
+    private void setJenisKendaraan(Integer pin){
+        dialog = new AlertDialog.Builder(MainActivity.this);
+        inflater = getLayoutInflater();
+        dialogView = inflater.inflate(R.layout.jenis_kendaraan,null);
+        dialog.setView(dialogView);
+        dialog.setCancelable(false);
+        dialog.setTitle("Jenis Kendaraan");
+        Integer pinNew = pin;
+        List<String> spinnerArray =  new ArrayList<String>();
+        spinnerArray.add("Silahkan Pilih Jenis Motor");
+        spinnerArray.add("Motor Manual");
+        spinnerArray.add("Motor Matic");
+        spinnerArray.add("Motor Matic(Tanpa Pengaman Standar Kaki");
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, spinnerArray);
+        dropdown = (Spinner) dialogView.findViewById(R.id.spinner1);
+        dropdown.setAdapter(adapter);
+        dropdown.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+                JenisKendaraan = adapterView.getItemAtPosition(i).toString();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> adapterView) {
+
+            }
+        });
+        dialog.setPositiveButton("Simpan", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                if(!JenisKendaraan.equals("Silahkan Pilih Jenis Motor")){
+                    createAkun(pinNew);
+                }else {
+                    Toast.makeText(MainActivity.this, "Silahkan Pilih Jenis Kendaraan!", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+            }
+        });
+
+        dialog.show();
+    }
 
     private void dialogFormOveride(){
         dialog = new AlertDialog.Builder(MainActivity.this);
@@ -203,7 +250,7 @@ public class MainActivity extends AppCompatActivity {
                     return;
                 }else{
                     pinNew = Integer.parseInt(pinOverride.getText().toString());
-                    createAkun(pinNew);
+                    setJenisKendaraan(pinNew);
                 }
             }
         });
@@ -220,6 +267,7 @@ public class MainActivity extends AppCompatActivity {
         databaseakun.child("finger2").setValue(0);
         databaseakun.child("finger3").setValue(0);
         databaseakun.child("finger4").setValue(0);
+        databaseakun.child("JenisKendaraan").setValue(JenisKendaraan);
         checkDevices("Berhasil Membuat Akun");
     }
 
@@ -231,6 +279,19 @@ public class MainActivity extends AppCompatActivity {
             DatabaseReference myRef = database.getReference("Devices/"+key);
             myRef.child("Imei2").removeValue();
         }
+    }
+
+    private String jenisKendaraan(){
+        String x = null;
+        if (JenisKendaraan.equals("Motor Manual")){
+            x = "1";
+        }else if(JenisKendaraan.equals("Motor Matic")){
+            x = "2";
+        }else if (JenisKendaraan.equals("Motor Matic(Tanpa Pengaman Standar Kaki")){
+            x = "3";
+        }
+
+        return x;
     }
 
     private void checkDevices(String Text){
@@ -254,14 +315,16 @@ public class MainActivity extends AppCompatActivity {
                         Integer finger2 = devices.child("finger2").getValue(Integer.class);
                         Integer finger3 = devices.child("finger3").getValue(Integer.class);
                         Integer finger4 = devices.child("finger4").getValue(Integer.class);
+                        JenisKendaraan = devices.child("JenisKendaraan").getValue(String.class);
 
                         if (imei.equals(dbImei) || imei.equals(dbImei2)) {
 
 //                            Toast.makeText(MainActivity.this,key , Toast.LENGTH_LONG).show();
                             isNotConnected = false;
-                            SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
-                            String str = sdf.format(new Date());
+                            SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
+                            String str = sdf.format(new Date()) + ":" + jenisKendaraan();
                             mConnectedThread.write("start"+str);
+                            Log.i("jeniskendaraan",str);
                             Log.i("BoolanCon",String.valueOf(isNotConnected));
                             Toast.makeText(MainActivity.this, Text, Toast.LENGTH_LONG).show();
                             connect.setText("DISCONNECT");
@@ -274,11 +337,13 @@ public class MainActivity extends AppCompatActivity {
                             cekFingerButton();
 
                         } else {
-                            mReadBuffer.setText("Perangkat ini Tidak Cocok!");
+                            mConnectedThread.write("12");
+                            isNotConnected = false;
                             connect.setText("Disconnect");
                             connect.setEnabled(true);
                             override.setVisibility(View.VISIBLE);
-                            isNotConnected = false;
+                            mReadBuffer.setText("Perangkat ini Tidak Cocok!");
+
                             Toast.makeText(MainActivity.this, "Perangkat ini Tidak Cocok!", Toast.LENGTH_LONG).show();
                         }
                     }
@@ -348,6 +413,13 @@ public class MainActivity extends AppCompatActivity {
             guest.setImageResource(R.drawable.unlock);
             mReadBuffer.setText(text);
         }
+        else if("Reset".equals(text)){
+            String treset = text.replace("Reset ","");
+            Log.i("reset",treset);
+            if(treset.equals("1")){
+                dialogReset();
+            }
+        }
         else if(text.startsWith("volt")){
             String tvolt = text.replace("volt ","");
             volt.setText(tvolt);
@@ -404,6 +476,10 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }else if(i==4){
                     waktu.setText(split[i]);
+                }else if(i==5){
+                    if (split[i].equals("1")){
+                        dialogReset();
+                    }
                 }
                 else {
                     switchMode(split[i]);
@@ -415,6 +491,37 @@ public class MainActivity extends AppCompatActivity {
             mConnectedThread.cancel();
         }
 
+    }
+
+    private void dialogReset(){
+        dialog = new AlertDialog.Builder(MainActivity.this);
+        inflater = getLayoutInflater();
+        dialogView = inflater.inflate(R.layout.form_reset,null);
+        dialog.setView(dialogView);
+        dialog.setCancelable(true);
+        dialog.setTitle("RESET");
+
+        dialog.setPositiveButton("Iya", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                DatabaseReference myRef = database.getReference("Devices/"+key);
+                myRef.removeValue();
+                checkDevices(devicesName);
+                mConnectedThread.write("13");
+                Toast.makeText(MainActivity.this,"Berhasil Reset!",Toast.LENGTH_LONG).show();
+            }
+        });
+
+        dialog.setNegativeButton("Tidak", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                mConnectedThread.write("13");
+                checkDevices(devicesName);
+                dialogInterface.dismiss();
+            }
+        });
+
+        dialog.show();
     }
 
     private void cekFingerButton(){
@@ -505,6 +612,31 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    private void cekImeiState(){
+        int permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE);
+
+        if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_PHONE_STATE}, REQUEST_READ_PHONE_STATE);
+        } else {
+
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        switch (requestCode) {
+            case REQUEST_READ_PHONE_STATE:
+                if ((grantResults.length > 0) && (grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
+
+                }
+                break;
+
+            default:
+                break;
+        }
+    }
+
     private void cekLocation(){
         int REQUEST_ACCESS_COARSE_LOCATION = 1;
         if (ContextCompat.checkSelfPermission(ctx, Manifest.permission.CAMERA)
@@ -543,8 +675,9 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_new);
         FirebaseDatabase database = FirebaseDatabase.getInstance();
-
+        cekImeiState();
         getImei();
+
         mBluetoothStatus = (TextView)findViewById(R.id.tv_stsBT);
         mReadBuffer = (TextView) findViewById(R.id.tv_sts);
         ignition = findViewById(R.id.bt_enggine);
@@ -576,6 +709,8 @@ public class MainActivity extends AppCompatActivity {
 
         mBTArrayAdapter = new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1);
         mBTAdapter = BluetoothAdapter.getDefaultAdapter(); // get a handle on the bluetooth radio
+
+
 
         mHandler = new Handler(){
             public void handleMessage(android.os.Message msg){
@@ -1145,6 +1280,7 @@ public class MainActivity extends AppCompatActivity {
 
         dialog.show();
     }
+
 
     private void dialogFormBt(){
 
