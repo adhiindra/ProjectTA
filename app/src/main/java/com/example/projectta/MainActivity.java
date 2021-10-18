@@ -259,7 +259,7 @@ public class MainActivity extends AppCompatActivity {
 
 //                            Toast.makeText(MainActivity.this,key , Toast.LENGTH_LONG).show();
                             isNotConnected = false;
-                            SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
+                            SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
                             String str = sdf.format(new Date());
                             mConnectedThread.write("start"+str);
                             Log.i("BoolanCon",String.valueOf(isNotConnected));
